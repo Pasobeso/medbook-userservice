@@ -16,6 +16,6 @@ pub struct Claims {
 
 #[derive(Debug,Clone,Serialize,Deserialize,PartialEq)]
 pub enum Roles {
-    Adventurer,
-    GuildCommander
+    Patient,
+    Doctor
 }

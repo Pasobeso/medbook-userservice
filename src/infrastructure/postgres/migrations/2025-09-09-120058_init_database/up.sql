@@ -6,7 +6,7 @@ CREATE TABLE users (
     phone_number         VARCHAR(32)  NOT NULL,
     password_hash        VARCHAR(255) NOT NULL,
 
-    role                 TEXT[] NOT NULL,
+    role                 VARCHAR[] NOT NULL,
 
     created_at           TIMESTAMP NOT NULL DEFAULT now(),
     updated_at           TIMESTAMP NOT NULL DEFAULT now(),
