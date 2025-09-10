@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
 
 use crate::{
     application::usecases::users::UsersUseCase,
-    domain::{repositories::users::UsersRepository, value_objects::user_model::RegisterUserModel},
-    infrastructure::postgres::{
+    domain::{repositories::users::UsersRepository, value_objects::users_model::{RegisterUserModel, RegisterUserResponseModel}},
+    infrastructure::{axum_http::api_response::ApiResponse, postgres::{
         postgres_connection::PgPoolSquad, repositories::users::UsersPostgres,
-    },
+    }},
 };
 
 pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
@@ -20,18 +20,31 @@ pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
 }
 
 pub async fn register<T>(
-    State(adventurers_use_case): State<Arc<UsersUseCase<T>>>,
+    State(users_use_case): State<Arc<UsersUseCase<T>>>,
     Json(register_user_model): Json<RegisterUserModel>,
 ) -> impl IntoResponse
 where
     T: UsersRepository + Send + Sync,
 {
-    match adventurers_use_case.register(register_user_model).await {
-        Ok(adventurer_id) => (
-            StatusCode::CREATED,
-            format!("Register adventurer id: {} successfully", adventurer_id),
-        )
-            .into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    match users_use_case.register(register_user_model).await {
+        Ok(user_id) => {
+            let data = RegisterUserResponseModel {
+                hospital_number: user_id,
+            };
+            (
+                StatusCode::CREATED,
+                Json(ApiResponse {
+                    data: Some(data),
+                    message: Some(format!("Register user id: {} successfully", user_id)),
+                }),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<RegisterUserResponseModel> {
+                data: None,
+                message: Some(e.to_string()),
+            }),
+        ),
     }
 }

@@ -1,2 +1,3 @@
 pub mod roles;
-pub mod user_model;
+pub mod users_model;
+pub mod authentication_model;

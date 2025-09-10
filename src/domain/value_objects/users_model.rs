@@ -27,3 +27,8 @@ impl RegisterUserModel {
         }
     }
 }
+
+#[derive(Debug,Clone,Serialize,Deserialize)]
+pub struct RegisterUserResponseModel {
+    pub hospital_number: i32,
+}

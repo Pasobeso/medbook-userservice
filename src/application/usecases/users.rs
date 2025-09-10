@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
-use crate::{domain::{repositories::users::UsersRepository, value_objects::user_model::RegisterUserModel}, infrastructure::argon2_hashing};
+use crate::{domain::{repositories::users::UsersRepository, value_objects::users_model::RegisterUserModel}, infrastructure::argon2_hashing};
 
 
 
