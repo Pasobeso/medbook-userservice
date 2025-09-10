@@ -17,18 +17,18 @@ use crate::{
     infrastructure::postgres::{postgres_connection::PgPoolSquad, schema::users},
 };
 
-pub struct UserPostgres {
+pub struct UsersPostgres {
     db_pool: Arc<PgPoolSquad>,
 }
 
-impl UserPostgres {
+impl UsersPostgres {
     pub fn new(db_pool: Arc<PgPoolSquad>) -> Self {
         Self { db_pool }
     }
 }
 
 #[async_trait]
-impl UsersRepository for UserPostgres {
+impl UsersRepository for UsersPostgres {
     async fn register(&self, register_user_entity: RegisterUserEntity) -> Result<i32> {
         let mut conn = Arc::clone(&self.db_pool).get()?;
 
