@@ -122,7 +122,7 @@ where
         let is_doctor = doctor.role.iter().any(|r| r == &doctor_role_str);
 
         if !is_doctor {
-            return Err(anyhow::anyhow!("User is not a patient"));
+            return Err(anyhow::anyhow!("User is not a doctor"));
         }
 
         let original_password = doctor.password;
