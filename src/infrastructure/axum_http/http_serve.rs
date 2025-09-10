@@ -22,6 +22,7 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Res
     let app = Router::new()
         .fallback(default_routers::not_found)
         .nest("/users", routers::users::routes(Arc::clone(&db_pool)))
+        .nest("/authentication",routers::authentication::routes(Arc::clone(&db_pool)))
         .route("/health-check", get(default_routers::health_check))
         .layer(TimeoutLayer::new(Duration::from_secs(
             config.server.timeout,
@@ -41,7 +42,7 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Res
                 .allow_origin(Any),
         )
         .layer(TraceLayer::new_for_http());
-    
+
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server.port));
 
     let listener = TcpListener::bind(addr).await?;

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use chrono::{Duration, Utc};
+use tracing::debug;
 
 use crate::{
     config::config_loader::{get_doctors_secret_env, get_patients_secret_env},
@@ -33,7 +34,6 @@ where
 
     pub async fn patients_login(&self, login_model: LoginModel) -> Result<Passport> {
         let secret_env = get_patients_secret_env()?;
-
         let patient = self
             .users_repository
             .find_by_id(login_model.hospital_number)
