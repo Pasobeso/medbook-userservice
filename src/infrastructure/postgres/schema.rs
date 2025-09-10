@@ -12,7 +12,7 @@ diesel::table! {
         #[max_length = 32]
         phone_number -> Varchar,
         #[max_length = 255]
-        password_hash -> Varchar,
+        password -> Varchar,
         role -> Array<Varchar>,
         created_at -> Timestamp,
         updated_at -> Timestamp,

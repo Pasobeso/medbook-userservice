@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
-use diesel::{prelude::{Identifiable, Insertable, Queryable, QueryableByName}, Selectable};
+use diesel::{prelude::{Identifiable, Insertable, Queryable}, Selectable};
 
-use crate::{domain::value_objects::roles::Role, infrastructure::postgres::schema::users};
+use crate::{infrastructure::postgres::schema::users};
 
 #[derive(Debug,Clone,Identifiable,Selectable,Queryable)]
 #[diesel(table_name = users)]
@@ -11,7 +11,7 @@ pub struct UserEntity {
     pub first_name: String,
     pub last_name: String,
     pub phone_number: String,
-    pub password_hash: String,
+    pub password: String,
     pub role: Vec<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
@@ -25,7 +25,7 @@ pub struct RegisterUserEntity {
     pub first_name: String,
     pub last_name: String,
     pub phone_number: String,
-    pub password_hash: String,
+    pub password: String,
     pub role: Vec<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
