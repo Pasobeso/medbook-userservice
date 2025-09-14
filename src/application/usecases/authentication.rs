@@ -2,11 +2,13 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use chrono::{Duration, Utc};
-use tracing::debug;
 
 use crate::{
     config::config_loader::{get_doctors_secret_env, get_patients_secret_env},
-    domain::{repositories::users::UsersRepository, value_objects::roles::Roles},
+    domain::{
+        entities::users::UserEntity, repositories::users::UsersRepository,
+        value_objects::roles::Roles,
+    },
     infrastructure::{
         argon2_hashing,
         jwt_authentication::{
@@ -14,6 +16,7 @@ use crate::{
             authentication_model::LoginModel,
             jwt_model::{self, Claims, Passport},
         },
+        postgres::schema::users,
     },
 };
 
@@ -186,5 +189,9 @@ where
             access_token,
             refresh_token,
         })
+    }
+
+    pub async fn get_me(&self, hospital_id: i32) -> Result<UserEntity> {
+        Ok(self.users_repository.find_by_id(hospital_id).await?)
     }
 }
