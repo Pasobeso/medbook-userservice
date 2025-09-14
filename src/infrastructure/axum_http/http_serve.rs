@@ -3,7 +3,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use anyhow::Result;
 use axum::{
     Router,
-    http::{HeaderValue, Method},
+    http::{HeaderValue, Method, header},
     routing::get,
 };
 use tokio::net::TcpListener;
@@ -46,7 +46,8 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Res
                     Method::PATCH,
                     Method::DELETE,
                 ])
-                .allow_headers(Any)
+                .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+                .allow_credentials(true)
                 .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap()),
         )
         .layer(TraceLayer::new_for_http());
