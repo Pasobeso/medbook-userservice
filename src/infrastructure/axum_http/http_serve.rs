@@ -1,7 +1,11 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Result;
-use axum::{Router, http::Method, routing::get};
+use axum::{
+    Router,
+    http::{HeaderValue, Method},
+    routing::get,
+};
 use tokio::net::TcpListener;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -22,7 +26,10 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Res
     let app = Router::new()
         .fallback(default_routers::not_found)
         .nest("/users", routers::users::routes(Arc::clone(&db_pool)))
-        .nest("/authentication",routers::authentication::routes(Arc::clone(&db_pool)))
+        .nest(
+            "/authentication",
+            routers::authentication::routes(Arc::clone(&db_pool)),
+        )
         .route("/health-check", get(default_routers::health_check))
         .layer(TimeoutLayer::new(Duration::from_secs(
             config.server.timeout,
@@ -39,7 +46,8 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Res
                     Method::PATCH,
                     Method::DELETE,
                 ])
-                .allow_origin(Any),
+                .allow_headers(Any)
+                .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap()), // .allow_credentials(true),
         )
         .layer(TraceLayer::new_for_http());
 
