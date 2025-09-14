@@ -47,7 +47,7 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Res
                     Method::DELETE,
                 ])
                 .allow_headers(Any)
-                .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap()), // .allow_credentials(true),
+                .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap()),
         )
         .layer(TraceLayer::new_for_http());
 
