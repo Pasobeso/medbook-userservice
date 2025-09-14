@@ -1,9 +1,13 @@
 use chrono::NaiveDateTime;
-use diesel::{prelude::{Identifiable, Insertable, Queryable}, Selectable};
+use diesel::{
+    Selectable,
+    prelude::{Identifiable, Insertable, Queryable},
+};
+use serde::{Deserialize, Serialize};
 
-use crate::{infrastructure::postgres::schema::users};
+use crate::infrastructure::postgres::schema::users;
 
-#[derive(Debug,Clone,Identifiable,Selectable,Queryable)]
+#[derive(Debug, Clone, Identifiable, Selectable, Queryable, Serialize, Deserialize)]
 #[diesel(table_name = users)]
 pub struct UserEntity {
     pub id: i32,
@@ -15,10 +19,10 @@ pub struct UserEntity {
     pub role: Vec<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-    pub deleted_at: Option<NaiveDateTime>
+    pub deleted_at: Option<NaiveDateTime>,
 }
 
-#[derive(Debug,Clone,Insertable,Queryable)]
+#[derive(Debug, Clone, Insertable, Queryable)]
 #[diesel(table_name = users)]
 pub struct RegisterUserEntity {
     pub citizen_id: String,
@@ -29,5 +33,5 @@ pub struct RegisterUserEntity {
     pub role: Vec<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-    pub deleted_at: Option<NaiveDateTime>
+    pub deleted_at: Option<NaiveDateTime>,
 }
