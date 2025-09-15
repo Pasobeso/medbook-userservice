@@ -1,19 +1,20 @@
-version: "3.9"
-
 services:
-  postgresql:
-    image: bitnami/postgresql:latest
-    container_name: my_postgres
-    restart: unless-stopped
+  users-db:
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: users_db
     ports:
       - "5432:5432"
-    environment:
-      POSTGRESQL_USERNAME: myuser
-      POSTGRESQL_PASSWORD: mypassword
-      POSTGRESQL_DATABASE: users_db
     volumes:
-      - postgres_data:/bitnami/postgresql
+      - users_db_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "5050:8080"
 
 volumes:
-  postgres_data:
-    driver: local
+  users_db_data:
