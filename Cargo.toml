@@ -29,3 +29,4 @@ anyhow = "1.0.93"
 argon2 = "0.5.3"
 rand = "0.8.5"
 jsonwebtoken = { version = "9", default-features = false }
+diesel-async = { version = "0.6.1", features = ["postgres", "tokio", "pool", "bb8"] }
