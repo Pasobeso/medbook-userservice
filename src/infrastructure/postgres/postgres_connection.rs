@@ -1,10 +1,18 @@
 use anyhow::Result;
-use diesel::{r2d2::{ConnectionManager, Pool}, PgConnection};
+use std::time::Duration;
 
-pub type PgPoolSquad = Pool<ConnectionManager<PgConnection>>;
+use diesel_async::{
+    AsyncPgConnection,
+    pooled_connection::{AsyncDieselConnectionManager, bb8::Pool},
+};
 
-pub fn establish_connection(database_url: &str) -> Result<PgPoolSquad> {
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    let pool = Pool::builder().build(manager)?;
-    Ok(pool)
+pub type PgPoolSquad = Pool<AsyncPgConnection>;
+
+pub async fn establish_connection(database_url: &str) -> Result<PgPoolSquad> {
+    let config = AsyncDieselConnectionManager::<diesel_async::AsyncPgConnection>::new(database_url);
+    let pool = Pool::builder()
+        .connection_timeout(Duration::from_secs(1))
+        .build(config)
+        .await;
+    Ok(pool?)
 }

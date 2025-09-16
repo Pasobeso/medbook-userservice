@@ -1,16 +1,20 @@
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
+use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 
 use crate::{
     application::usecases::users::UsersUseCase,
-    domain::{repositories::users::UsersRepository, value_objects::users_model::{RegisterUserModel, RegisterUserResponseModel}},
-    infrastructure::{axum_http::api_response::ApiResponse, postgres::{
-        postgres_connection::PgPoolSquad, repositories::users::UsersPostgres,
-    }},
+    domain::{
+        repositories::users::UsersRepository,
+        value_objects::users_model::{RegisterUserModel, RegisterUserResponseModel},
+    },
+    infrastructure::{
+        axum_http::api_response::ApiResponse,
+        postgres::{postgres_connection::PgPoolSquad, repositories::users::UsersPostgres},
+    },
 };
 
-pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
+pub fn routes(db_pool: PgPoolSquad) -> Router {
     let users_repository = UsersPostgres::new(db_pool);
     let users_use_case = UsersUseCase::new(Arc::new(users_repository));
 

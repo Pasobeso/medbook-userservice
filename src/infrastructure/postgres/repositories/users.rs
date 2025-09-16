@@ -1,12 +1,11 @@
-use std::sync::Arc;
-
 use anyhow::Result;
 use axum::async_trait;
 use diesel::{
-    dsl::{exists, insert_into, select},
-    prelude::*,
+    ExpressionMethods, QueryDsl,
+    dsl::insert_into,
     sql_types::{Integer, Text},
 };
+use diesel_async::RunQueryDsl;
 
 use crate::{
     domain::{
@@ -18,11 +17,11 @@ use crate::{
 };
 
 pub struct UsersPostgres {
-    db_pool: Arc<PgPoolSquad>,
+    db_pool: PgPoolSquad,
 }
 
 impl UsersPostgres {
-    pub fn new(db_pool: Arc<PgPoolSquad>) -> Self {
+    pub fn new(db_pool: PgPoolSquad) -> Self {
         Self { db_pool }
     }
 }
@@ -30,40 +29,34 @@ impl UsersPostgres {
 #[async_trait]
 impl UsersRepository for UsersPostgres {
     async fn register(&self, register_user_entity: RegisterUserEntity) -> Result<i32> {
-        let mut conn = Arc::clone(&self.db_pool).get()?;
-
+        let mut conn = self.db_pool.get().await?;
         let result = insert_into(users::table)
             .values(register_user_entity)
             .returning(users::id)
-            .get_result::<i32>(&mut conn)?;
+            .get_result::<i32>(&mut conn)
+            .await?;
 
         Ok(result)
     }
     async fn find_by_id(&self, id: i32) -> Result<UserEntity> {
-        let mut conn = Arc::clone(&self.db_pool).get()?;
-
-        let result = users::table
-            .filter(users::id.eq(id))
-            .select(UserEntity::as_select())
-            .first::<UserEntity>(&mut conn)?;
-
+        let mut conn = self.db_pool.get().await?;
+        let result = users::table.find(id).get_result(&mut conn).await?;
         Ok(result)
     }
 
     async fn remove_by_id(&self, id: i32) -> Result<()> {
-        let mut conn = Arc::clone(&self.db_pool).get()?;
-
+        let mut conn = self.db_pool.get().await?;
         diesel::update(users::table)
             .filter(users::id.eq(id))
             .filter(users::deleted_at.is_null())
             .set((users::deleted_at.eq(chrono::Utc::now().naive_utc()),))
-            .execute(&mut conn)?;
-
+            .execute(&mut conn)
+            .await?;
         Ok(())
     }
 
     async fn add_role_to_user_by_id(&self, role: Roles, id: i32) -> Result<()> {
-        let mut conn = Arc::clone(&self.db_pool).get()?;
+        let mut conn = self.db_pool.get().await?;
         let role_str = role.to_string();
 
         diesel::sql_query(
@@ -79,13 +72,14 @@ impl UsersRepository for UsersPostgres {
         )
         .bind::<Text, _>(role_str)
         .bind::<Integer, _>(id)
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await?;
 
         Ok(())
     }
 
     async fn remove_role_from_user_by_id(&self, role: Roles, id: i32) -> Result<()> {
-        let mut conn = Arc::clone(&self.db_pool).get()?;
+        let mut conn = self.db_pool.get().await?;
         let role_str = role.to_string();
 
         // ลบทุก occurrence ของค่านั้นในอาเรย์
@@ -99,7 +93,8 @@ impl UsersRepository for UsersPostgres {
         )
         .bind::<Text, _>(role_str)
         .bind::<Integer, _>(id)
-        .execute(&mut conn)?;
+        .execute(&mut conn)
+        .await?;
 
         Ok(())
     }

@@ -22,14 +22,11 @@ use crate::{
 
 use super::default_routers;
 
-pub async fn start(config: Arc<DotEnvyConfig>, db_pool: Arc<PgPoolSquad>) -> Result<()> {
+pub async fn start(config: Arc<DotEnvyConfig>, db_pool: PgPoolSquad) -> Result<()> {
     let app = Router::new()
         .fallback(default_routers::not_found)
-        .nest("/users", routers::users::routes(Arc::clone(&db_pool)))
-        .nest(
-            "/authentication",
-            routers::authentication::routes(Arc::clone(&db_pool)),
-        )
+        .nest("/users", routers::users::routes(db_pool.clone()))
+        .nest("/authentication", routers::authentication::routes(db_pool))
         .route("/health-check", get(default_routers::health_check))
         .layer(TimeoutLayer::new(Duration::from_secs(
             config.server.timeout,

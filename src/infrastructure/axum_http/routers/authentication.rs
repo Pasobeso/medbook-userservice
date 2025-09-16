@@ -28,8 +28,8 @@ use crate::{
     },
 };
 
-pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
-    let users_repository = UsersPostgres::new(Arc::clone(&db_pool));
+pub fn routes(db_pool: PgPoolSquad) -> Router {
+    let users_repository = UsersPostgres::new(db_pool);
     let authentication_use_case = AuthenticationUseCase::new(Arc::new(users_repository));
 
     Router::new()
