@@ -1,6 +1,11 @@
 use anyhow::Result;
 
-use super::{config_model::{ PatientsSecret, Database, DotEnvyConfig, DoctorsSecret, Server}, stage::Stage};
+use crate::config::config_model::Frontend;
+
+use super::{
+    config_model::{Database, DoctorsSecret, DotEnvyConfig, PatientsSecret, Server},
+    stage::Stage,
+};
 
 pub fn load() -> Result<DotEnvyConfig> {
     dotenvy::dotenv().ok();
@@ -17,11 +22,22 @@ pub fn load() -> Result<DotEnvyConfig> {
             .parse()?,
     };
 
-    let database = Database{
+    let frontend = Frontend {
+        production_url: std::env::var("PRODUCTION_FRONTEND_URL")
+            .expect("PRODUCTION_FRONTEND_URL is invalid"),
+        development_url: std::env::var("DEVELOPMENT_FRONTEND_URL")
+            .expect("DEVELOPMENT_FRONTEND_URL is invalid"),
+    };
+
+    let database = Database {
         url: std::env::var("DATABASE_URL").expect("DATABASE_URL is invalid"),
     };
 
-    Ok(DotEnvyConfig {server,database})
+    Ok(DotEnvyConfig {
+        server,
+        frontend,
+        database,
+    })
 }
 
 pub fn get_stage() -> Stage {
@@ -36,8 +52,8 @@ pub fn get_patients_secret_env() -> Result<PatientsSecret> {
 
     Ok(PatientsSecret {
         secret: std::env::var("JWT_PATIENT_SECRET").expect("JWT_PATIENT_SECRET is invalid"),
-        refresh_secret: std::env::var("JWT_PATIENT_REFRESH_SECRET").expect("JWT_PATIENT_REFRESH_SECRET is invalid"),
-
+        refresh_secret: std::env::var("JWT_PATIENT_REFRESH_SECRET")
+            .expect("JWT_PATIENT_REFRESH_SECRET is invalid"),
     })
 }
 
@@ -46,7 +62,7 @@ pub fn get_doctors_secret_env() -> Result<DoctorsSecret> {
 
     Ok(DoctorsSecret {
         secret: std::env::var("JWT_DOCTOR_SECRET").expect("JWT_DOCTOR_SECRET is invalid"),
-        refresh_secret: std::env::var("JWT_DOCTOR_REFRESH_SECRET").expect("JWT_DOCTOR_REFRESH_SECRET is invalid"),
-
+        refresh_secret: std::env::var("JWT_DOCTOR_REFRESH_SECRET")
+            .expect("JWT_DOCTOR_REFRESH_SECRET is invalid"),
     })
 }

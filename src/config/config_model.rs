@@ -1,6 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct DotEnvyConfig {
     pub server: Server,
+    pub frontend: Frontend,
     pub database: Database,
 }
 
@@ -12,8 +13,14 @@ pub struct Server {
 }
 
 #[derive(Debug, Clone)]
+pub struct Frontend {
+    pub development_url: String,
+    pub production_url: String,
+}
+
+#[derive(Debug, Clone)]
 pub struct Database {
-    pub url: String
+    pub url: String,
 }
 
 #[derive(Debug, Clone)]
@@ -25,5 +32,5 @@ pub struct PatientsSecret {
 #[derive(Debug, Clone)]
 pub struct DoctorsSecret {
     pub secret: String,
-    pub refresh_secret: String
+    pub refresh_secret: String,
 }

@@ -2,9 +2,9 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Result;
 use axum::{
-    Router,
-    http::{HeaderValue, Method, header},
+    http::{header, HeaderValue, Method},
     routing::get,
+    Router,
 };
 use tokio::net::TcpListener;
 use tower_http::{
@@ -16,14 +16,14 @@ use tower_http::{
 use tracing::info;
 
 use crate::{
-    config::config_model::DotEnvyConfig,
+    config::{config_loader, config_model::DotEnvyConfig, stage::Stage},
     infrastructure::{axum_http::routers, postgres::postgres_connection::PgPoolSquad},
 };
 
 use super::default_routers;
 
 pub async fn start(config: Arc<DotEnvyConfig>, db_pool: PgPoolSquad) -> Result<()> {
-    let app = Router::new()
+    let mut app = Router::new()
         .fallback(default_routers::not_found)
         .nest("/users", routers::users::routes(db_pool.clone()))
         .nest("/authentication", routers::authentication::routes(db_pool))
@@ -34,20 +34,53 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: PgPoolSquad) -> Result<(
         .layer(RequestBodyLimitLayer::new(
             (config.server.body_limit * 1024 * 1024).try_into()?,
         ))
-        .layer(
-            CorsLayer::new()
-                .allow_methods([
-                    Method::GET,
-                    Method::POST,
-                    Method::PUT,
-                    Method::PATCH,
-                    Method::DELETE,
-                ])
-                .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
-                .allow_credentials(true)
-                .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap()),
-        )
         .layer(TraceLayer::new_for_http());
+
+    let development_cors_layer = CorsLayer::new()
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+        .allow_credentials(true)
+        .allow_origin(
+            config
+                .frontend
+                .development_url
+                .parse::<HeaderValue>()
+                .unwrap(),
+        );
+
+    let production_cors_layer = CorsLayer::new()
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+        .allow_credentials(true)
+        .allow_origin(
+            config
+                .frontend
+                .production_url
+                .parse::<HeaderValue>()
+                .unwrap(),
+        );
+
+    match config_loader::get_stage() {
+        Stage::Production => {
+            app = app.layer(production_cors_layer);
+        }
+        Stage::Development => {
+            app = app.layer(development_cors_layer);
+        }
+        Stage::Local => {}
+    }
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server.port));
 

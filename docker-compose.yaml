@@ -1,20 +1,16 @@
-services:
-  users-db:
-    image: postgres:alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: example
-      POSTGRES_DB: users_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - users_db_data:/var/lib/postgresql/data
+# this compose purpose is only for testing backend , so it will only have dependencies that this code is needed!
+version: "3.9"
 
-  adminer:
-    image: adminer
-    restart: always
+services:
+  db:
+    container_name: medbook-userservice-db-dev
+    image: bitnami/postgresql:latest
     ports:
-      - "5050:8080"
+      - 5433:5432
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - medbook_userservice_db_data_dev:/bitnami/postgresql
 
 volumes:
-  users_db_data:
+  medbook_userservice_db_data_dev:
