@@ -35,12 +35,14 @@ async fn main() {
         };
 
     info!("Postgres connection has been established");
+
     if let Err(e) = postgres_migration::run_migrations_blocking(&dotenvy_env.database.url).await {
         error!("Failed to run database migrations: {e}");
         std::process::exit(1);
     }
 
     info!("Database migrations have been applied successfully");
+
     start(Arc::new(dotenvy_env), postgres_pool)
         .await
         .expect("Failed to start server")

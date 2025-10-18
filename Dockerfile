@@ -1,38 +1,39 @@
 # syntax=docker/dockerfile:1
-FROM rust:slim AS build
+ARG RUST_VERSION=1.90
+
+# ---------- builder base (มี cargo-chef + build tools) ----------
+FROM lukemathwalker/cargo-chef:latest-rust-${RUST_VERSION}-slim AS chef
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential pkg-config libssl-dev libpq-dev ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+  build-essential pkg-config libssl-dev libpq-dev ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# (optional) Diesel CLI for migrations from this image
-RUN cargo install diesel_cli --no-default-features --features postgres
-
-# cache deps
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir -p src && echo "fn main(){}" > src/main.rs \
-    && cargo build --release && rm -rf src
-
-# build app
+# ---------- planner (generate recipe.json) ----------
+FROM chef AS planner
 COPY . .
-RUN cargo build --release --bin medbook-userservice
+RUN cargo chef prepare --recipe-path recipe.json
 
-# -------- runtime (Debian) --------
-FROM debian:stable-slim
+# ---------- builder (cook deps & build app) ----------
+FROM chef AS builder
+COPY --from=planner /app/recipe.json /app/recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+COPY . .
+ENV RUSTFLAGS="-C strip=debuginfo"
+RUN cargo build --frozen --release --bin medbook-userservice
+
+# ---------- runtime ----------
+FROM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libpq5 curl \
-    && rm -rf /var/lib/apt/lists/*
+  ca-certificates libpq5 \
+  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# copy server and (optionally) diesel
-COPY --from=build /app/target/release/medbook-userservice /app/server
-COPY --from=build /app/src/infrastructure/postgres/migrations /app/migrations
-COPY --from=build /usr/local/cargo/bin/diesel /usr/local/bin/diesel
+COPY --from=builder /app/target/release/medbook-userservice /usr/local/bin/server
 
-# drop privileges
-RUN useradd -m app && chown app:app /app
+RUN useradd --system --home-dir /app --create-home app && chown -R app:app /app
 USER app
 
 ENV PORT=3000 RUST_LOG=info RUST_BACKTRACE=1
 EXPOSE 3000
-CMD ["/app/server"]
+ENTRYPOINT ["/usr/local/bin/server"]
