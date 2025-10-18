@@ -72,6 +72,17 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: PgPoolSquad) -> Result<(
                 .unwrap(),
         );
 
+    let local_cors_layer = CorsLayer::new()
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
+        .allow_headers(Any)
+        .allow_origin(Any);
+
     match config_loader::get_stage() {
         Stage::Production => {
             app = app.layer(production_cors_layer);
@@ -79,7 +90,9 @@ pub async fn start(config: Arc<DotEnvyConfig>, db_pool: PgPoolSquad) -> Result<(
         Stage::Development => {
             app = app.layer(development_cors_layer);
         }
-        Stage::Local => {}
+        Stage::Local => {
+            app = app.layer(local_cors_layer);
+        }
     }
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server.port));
