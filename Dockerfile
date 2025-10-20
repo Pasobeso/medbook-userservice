@@ -4,8 +4,8 @@ ARG RUST_VERSION=1.90
 # ---------- builder base (มี cargo-chef + build tools) ----------
 FROM lukemathwalker/cargo-chef:latest-rust-${RUST_VERSION}-slim AS chef
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  build-essential pkg-config libssl-dev libpq-dev ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+	build-essential pkg-config libssl-dev libpq-dev ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # ---------- planner (generate recipe.json) ----------
@@ -23,10 +23,10 @@ ENV RUSTFLAGS="-C strip=debuginfo"
 RUN cargo build --frozen --release --bin medbook-userservice
 
 # ---------- runtime ----------
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  ca-certificates libpq5 \
-  && rm -rf /var/lib/apt/lists/*
+	ca-certificates libpq5 \
+	&& rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY --from=builder /app/target/release/medbook-userservice /usr/local/bin/server
