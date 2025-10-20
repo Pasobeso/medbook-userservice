@@ -20,6 +20,7 @@ pub fn load() -> Result<DotEnvyConfig> {
         timeout: std::env::var("SERVER_TIMEOUT")
             .expect("SERVER_TIMEOUT is invalid")
             .parse()?,
+        path_prefix: std::env::var("PATH_PREFIX").expect("PATH_PREFIX is invalid"),
     };
 
     let frontend = Frontend {

@@ -2,9 +2,9 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::Result;
 use axum::{
-    http::{header, HeaderValue, Method},
-    routing::get,
     Router,
+    http::{HeaderValue, Method, header},
+    routing::get,
 };
 use tokio::net::TcpListener;
 use tower_http::{
@@ -14,19 +14,35 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing::info;
+use utoipa::openapi::InfoBuilder;
 
 use crate::{
     config::{config_loader, config_model::DotEnvyConfig, stage::Stage},
-    infrastructure::{axum_http::routers, postgres::postgres_connection::PgPoolSquad},
+    infrastructure::{
+        axum_http::{routers, swagger},
+        postgres::postgres_connection::PgPoolSquad,
+    },
 };
 
 use super::default_routers;
 
 pub async fn start(config: Arc<DotEnvyConfig>, db_pool: PgPoolSquad) -> Result<()> {
+    let routes = routers::authentication::routes_with_openapi(db_pool.clone())
+        .merge(routers::users::routes_with_openapi(db_pool.clone()));
+
+    let mut openapi = routes.get_openapi().clone();
+    openapi.info = InfoBuilder::new()
+        .title("MedBook UserService API")
+        .version("1.0.0")
+        .build();
+    let swagger_ui = swagger::create_swagger_ui(openapi)?;
+
     let mut app = Router::new()
         .fallback(default_routers::not_found)
-        .nest("/users", routers::users::routes(db_pool.clone()))
-        .nest("/authentication", routers::authentication::routes(db_pool))
+        // .nest("/users", routers::users::routes(db_pool.clone()))
+        // .nest("/authentication", routers::authentication::routes(db_pool))
+        .merge(routes)
+        .merge(swagger_ui)
         .route("/health-check", get(default_routers::health_check))
         .layer(TimeoutLayer::new(Duration::from_secs(
             config.server.timeout,

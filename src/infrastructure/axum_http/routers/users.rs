@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
+use utoipa_axum::router::OpenApiRouter;
 
 use crate::{
     application::usecases::users::UsersUseCase,
@@ -14,6 +15,7 @@ use crate::{
     },
 };
 
+#[deprecated]
 pub fn routes(db_pool: PgPoolSquad) -> Router {
     let users_repository = UsersPostgres::new(db_pool);
     let users_use_case = UsersUseCase::new(Arc::new(users_repository));
@@ -23,6 +25,29 @@ pub fn routes(db_pool: PgPoolSquad) -> Router {
         .with_state(Arc::new(users_use_case))
 }
 
+/// Defines routes with OpenAPI specs. Should be used over `routes()` where possible.
+pub fn routes_with_openapi(db_pool: PgPoolSquad) -> OpenApiRouter {
+    let users_repository = UsersPostgres::new(db_pool);
+    let users_use_case = UsersUseCase::new(Arc::new(users_repository));
+
+    OpenApiRouter::new().nest(
+        "/users",
+        OpenApiRouter::new()
+            .routes(utoipa_axum::routes!(register))
+            .with_state(Arc::new(users_use_case)),
+    )
+}
+
+/// Registers a new user (patient or doctor) in the system.
+#[utoipa::path(
+    post,
+    path = "/",
+    tags = ["Users"],
+    request_body = RegisterUserModel,
+    responses(
+        (status = 201, description = "User registered successfully", body = ApiResponse<RegisterUserResponseModel>)
+    )
+)]
 pub async fn register<T>(
     State(users_use_case): State<Arc<UsersUseCase<T>>>,
     Json(register_user_model): Json<RegisterUserModel>,

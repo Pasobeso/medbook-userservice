@@ -10,6 +10,7 @@ pub struct Server {
     pub port: u16,
     pub body_limit: u64,
     pub timeout: u64,
+    pub path_prefix: String,
 }
 
 #[derive(Debug, Clone)]

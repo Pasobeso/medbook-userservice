@@ -1,5 +1,4 @@
 use anyhow::Result;
-use axum::async_trait;
 use diesel::{
     ExpressionMethods, QueryDsl,
     dsl::insert_into,
@@ -26,7 +25,7 @@ impl UsersPostgres {
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl UsersRepository for UsersPostgres {
     async fn register(&self, register_user_entity: RegisterUserEntity) -> Result<i32> {
         let mut conn = self.db_pool.get().await?;

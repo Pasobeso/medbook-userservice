@@ -4,10 +4,11 @@ use diesel::{
     prelude::{Identifiable, Insertable, Queryable},
 };
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::infrastructure::postgres::schema::users;
 
-#[derive(Debug, Clone, Identifiable, Selectable, Queryable, Serialize, Deserialize)]
+#[derive(Debug, Clone, Identifiable, Selectable, Queryable, Serialize, Deserialize, ToSchema)]
 #[diesel(table_name = users)]
 pub struct UserEntity {
     pub id: i32,

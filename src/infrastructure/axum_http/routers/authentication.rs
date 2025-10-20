@@ -10,6 +10,7 @@ use axum::{
 
 use axum_extra::extract::cookie::{Cookie, CookieJar};
 use cookie::time::Duration;
+use utoipa_axum::router::OpenApiRouter;
 
 use crate::{
     application::usecases::authentication::AuthenticationUseCase,
@@ -28,6 +29,7 @@ use crate::{
     },
 };
 
+#[deprecated]
 pub fn routes(db_pool: PgPoolSquad) -> Router {
     let users_repository = UsersPostgres::new(db_pool);
     let authentication_use_case = AuthenticationUseCase::new(Arc::new(users_repository));
@@ -42,6 +44,34 @@ pub fn routes(db_pool: PgPoolSquad) -> Router {
         .with_state(Arc::new(authentication_use_case))
 }
 
+/// Defines routes with OpenAPI specs. Should be used over `routes()` where possible.
+pub fn routes_with_openapi(db_pool: PgPoolSquad) -> OpenApiRouter {
+    let users_repository = UsersPostgres::new(db_pool);
+    let authentication_use_case = AuthenticationUseCase::new(Arc::new(users_repository));
+
+    OpenApiRouter::new().nest(
+        "/authentication",
+        OpenApiRouter::new()
+            .routes(utoipa_axum::routes!(patients_login))
+            .routes(utoipa_axum::routes!(patients_refresh_token))
+            .routes(utoipa_axum::routes!(doctors_login))
+            .routes(utoipa_axum::routes!(doctors_refresh_token))
+            .routes(utoipa_axum::routes!(get_me))
+            .routes(utoipa_axum::routes!(logout))
+            .with_state(Arc::new(authentication_use_case)),
+    )
+}
+
+/// Logs in a patient and sets authentication cookies.
+#[utoipa::path(
+    post,
+    path = "/patients/login",
+    tags = ["Authentication"],
+    request_body = LoginModel,
+    responses(
+        (status = 200, description = "Login successfully", body = ApiResponse<LoginResponseModel>)
+    )
+)]
 pub async fn patients_login<T>(
     State(authentication_use_case): State<Arc<AuthenticationUseCase<T>>>,
     Json(login_model): Json<LoginModel>,
@@ -100,6 +130,15 @@ where
     }
 }
 
+/// Refreshes the patient's authentication tokens using the refresh cookie.
+#[utoipa::path(
+    post,
+    path = "/patients/refresh-token",
+    tags = ["Authentication"],
+    responses(
+        (status = 200, description = "Refreshed patient tokens successfully", body = ApiResponse<LoginResponseModel>)
+    )
+)]
 pub async fn patients_refresh_token<T>(
     State(authentication_use_case): State<Arc<AuthenticationUseCase<T>>>,
     jar: CookieJar,
@@ -169,6 +208,16 @@ where
     (StatusCode::BAD_REQUEST, "Refresh token not found").into_response()
 }
 
+/// Logs in a doctor and sets authentication cookies.
+#[utoipa::path(
+    post,
+    path = "/doctors/login",
+    tags = ["Authentication"],
+    request_body = LoginModel,
+    responses(
+        (status = 200, description = "Login successfully", body = ApiResponse<LoginResponseModel>)
+    )
+)]
 pub async fn doctors_login<T>(
     State(authentication_use_case): State<Arc<AuthenticationUseCase<T>>>,
     Json(login_model): Json<LoginModel>,
@@ -228,6 +277,15 @@ where
     }
 }
 
+/// Refreshes the doctor's authentication tokens using the refresh cookie.
+#[utoipa::path(
+    post,
+    path = "/doctors/refresh-token",
+    tags = ["Authentication"],
+    responses(
+        (status = 200, description = "Refreshed doctor tokens successfully", body = ApiResponse<LoginResponseModel>)
+    )
+)]
 pub async fn doctors_refresh_token<T>(
     State(authentication_use_case): State<Arc<AuthenticationUseCase<T>>>,
     jar: CookieJar,
@@ -304,6 +362,15 @@ where
         .into_response()
 }
 
+/// Retrieves information about the currently authenticated user.
+#[utoipa::path(
+    get,
+    path = "/me",
+    tags = ["Authentication"],
+    responses(
+        (status = 200, description = "Fetched current user successfully", body = ApiResponse<GetMeResponseModel>)
+    )
+)]
 pub async fn get_me<T>(
     State(authentication_use_case): State<Arc<AuthenticationUseCase<T>>>,
     jar: CookieJar,
@@ -395,6 +462,15 @@ where
     );
 }
 
+/// Logs out the current user and clears authentication cookies.
+#[utoipa::path(
+    delete,
+    path = "/logout",
+    tags = ["Authentication"],
+    responses(
+        (status = 200, description = "Logged out successfully")
+    )
+)]
 pub async fn logout<T>(
     State(authentication_use_case): State<Arc<AuthenticationUseCase<T>>>,
 ) -> impl IntoResponse

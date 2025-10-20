@@ -1,15 +1,15 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::domain::{entities::users::RegisterUserEntity, value_objects::roles::Roles};
 
-#[derive(Debug,Clone,Serialize,Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RegisterUserModel {
     pub citizen_id: String,
     pub first_name: String,
     pub last_name: String,
     pub phone_number: String,
     pub password: String,
-
 }
 
 impl RegisterUserModel {
@@ -28,7 +28,7 @@ impl RegisterUserModel {
     }
 }
 
-#[derive(Debug,Clone,Serialize,Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RegisterUserResponseModel {
     pub hospital_number: i32,
 }
