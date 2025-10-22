@@ -88,7 +88,7 @@ where
     }
 }
 
-/// Registers a new user (patient or doctor) in the system.
+/// Find user by id.
 #[utoipa::path(
     get,
     path = "/{user_id}",
