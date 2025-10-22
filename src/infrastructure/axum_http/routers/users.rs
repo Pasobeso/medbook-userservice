@@ -1,13 +1,21 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
+use axum::{
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+};
 use utoipa_axum::router::OpenApiRouter;
 
 use crate::{
     application::usecases::users::UsersUseCase,
     domain::{
         repositories::users::UsersRepository,
-        value_objects::users_model::{RegisterUserModel, RegisterUserResponseModel},
+        value_objects::users_model::{
+            FindUserByIdResponseModel, RegisterUserModel, RegisterUserResponseModel,
+        },
     },
     infrastructure::{
         axum_http::api_response::ApiResponse,
@@ -22,6 +30,7 @@ pub fn routes(db_pool: PgPoolSquad) -> Router {
 
     Router::new()
         .route("/", post(register))
+        .route("/:user_id", get(find_by_id))
         .with_state(Arc::new(users_use_case))
 }
 
@@ -34,6 +43,7 @@ pub fn routes_with_openapi(db_pool: PgPoolSquad) -> OpenApiRouter {
         "/users",
         OpenApiRouter::new()
             .routes(utoipa_axum::routes!(register))
+            .routes(utoipa_axum::routes!(find_by_id))
             .with_state(Arc::new(users_use_case)),
     )
 }
@@ -71,6 +81,53 @@ where
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::<RegisterUserResponseModel> {
+                data: None,
+                message: Some(e.to_string()),
+            }),
+        ),
+    }
+}
+
+/// Registers a new user (patient or doctor) in the system.
+#[utoipa::path(
+    get,
+    path = "/:user_id",
+    tags = ["Users"],
+    responses(
+        (status = 201, description = "Find user by id successfully", body = ApiResponse<FindUserByIdResponseModel>)
+    )
+)]
+pub async fn find_by_id<T>(
+    State(users_use_case): State<Arc<UsersUseCase<T>>>,
+    Path(user_id): Path<i32>,
+) -> impl IntoResponse
+where
+    T: UsersRepository + Send + Sync,
+{
+    match users_use_case.find_by_id(user_id).await {
+        Ok(user_entity) => {
+            let data = FindUserByIdResponseModel {
+                id: user_entity.id,
+                citizen_id: user_entity.citizen_id.clone(),
+                first_name: user_entity.first_name.clone(),
+                last_name: user_entity.last_name.clone(),
+                phone_number: user_entity.phone_number.clone(),
+                role: user_entity.role.clone(),
+                created_at: user_entity.created_at,
+                updated_at: user_entity.updated_at,
+                deleted_at: user_entity.deleted_at,
+            };
+            (
+                StatusCode::CREATED,
+                Json(ApiResponse {
+                    data: Some(data),
+                    message: Some(format!("Get user id: {} successfully", user_id)),
+                }),
+            )
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<FindUserByIdResponseModel> {
                 data: None,
                 message: Some(e.to_string()),
             }),

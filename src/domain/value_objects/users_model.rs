@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -31,4 +32,17 @@ impl RegisterUserModel {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RegisterUserResponseModel {
     pub hospital_number: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct FindUserByIdResponseModel {
+    pub id: i32,
+    pub citizen_id: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub phone_number: String,
+    pub role: Vec<String>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub deleted_at: Option<NaiveDateTime>,
 }
