@@ -91,7 +91,7 @@ where
 /// Registers a new user (patient or doctor) in the system.
 #[utoipa::path(
     get,
-    path = "/:user_id",
+    path = "/{user_id}",
     tags = ["Users"],
     responses(
         (status = 201, description = "Find user by id successfully", body = ApiResponse<FindUserByIdResponseModel>)
